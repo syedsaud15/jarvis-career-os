@@ -1,0 +1,13 @@
+services:
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      JARVIS_TIMEZONE: ${JARVIS_TIMEZONE:-Asia/Kolkata}
+    volumes:
+      - jarvis_data:/data
+    restart: unless-stopped
+
+volumes:
+  jarvis_data:

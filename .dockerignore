@@ -1,0 +1,8 @@
+.venv
+dashboard/node_modules
+data
+work
+__pycache__
+.pytest_cache
+.git
+.env

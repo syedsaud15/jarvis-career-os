@@ -1,0 +1,28 @@
+{$JARVIS_DOMAIN} {
+  encode zstd gzip
+  header {
+    X-Content-Type-Options nosniff
+    X-Frame-Options DENY
+    Referrer-Policy strict-origin-when-cross-origin
+    -Server
+  }
+
+  @protected not path /health
+  basic_auth @protected {
+    {$JARVIS_ADMIN_USER} {$JARVIS_ADMIN_PASSWORD_HASH}
+  }
+
+  handle_path /api/* {
+    reverse_proxy api:8000 {
+      header_up X-API-Key {$JARVIS_API_KEY}
+    }
+  }
+
+  handle /health {
+    reverse_proxy api:8000
+  }
+
+  handle {
+    reverse_proxy dashboard:80
+  }
+}

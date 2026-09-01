@@ -1,0 +1,55 @@
+services:
+  api:
+    build: .
+    restart: unless-stopped
+    environment:
+      JARVIS_DB_PATH: /data/jarvis.db
+      JARVIS_TIMEZONE: ${JARVIS_TIMEZONE:-Asia/Kolkata}
+      JARVIS_API_KEY: ${JARVIS_API_KEY}
+      GROQ_API_KEY: ${GROQ_API_KEY:-}
+      GROQ_MODEL: ${GROQ_MODEL:-llama-3.3-70b-versatile}
+      ADZUNA_APP_ID: ${ADZUNA_APP_ID:-}
+      ADZUNA_APP_KEY: ${ADZUNA_APP_KEY:-}
+      ADZUNA_COUNTRY: ${ADZUNA_COUNTRY:-in}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      GOOGLE_REDIRECT_URI: https://${JARVIS_DOMAIN}/api/integrations/google/callback
+    volumes:
+      - jarvis_data:/data
+    networks: [jarvis]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  dashboard:
+    build: ./dashboard
+    restart: unless-stopped
+    networks: [jarvis]
+
+  gateway:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on: [api, dashboard]
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      JARVIS_DOMAIN: ${JARVIS_DOMAIN}
+      JARVIS_API_KEY: ${JARVIS_API_KEY}
+      JARVIS_ADMIN_USER: ${JARVIS_ADMIN_USER}
+      JARVIS_ADMIN_PASSWORD_HASH: ${JARVIS_ADMIN_PASSWORD_HASH}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks: [jarvis]
+
+volumes:
+  jarvis_data:
+  caddy_data:
+  caddy_config:
+
+networks:
+  jarvis:

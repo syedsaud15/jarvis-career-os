@@ -1,0 +1,17 @@
+.env
+.env.*
+!.env.example
+.venv/
+__pycache__/
+.pytest_cache/
+pytest-cache-files-*/
+*.py[cod]
+*.db
+data/
+work/
+outputs/
+dashboard/node_modules/
+dashboard/dist/
+.vite-cache/
+whatsapp-bridge/.wwebjs_auth/
+whatsapp-bridge/node_modules/
