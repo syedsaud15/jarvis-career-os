@@ -43,6 +43,10 @@ def test_public_demo_contract_is_api_isolated():
     root = Path(__file__).parents[1]
     nginx = (root / "deploy" / "render-nginx.conf").read_text(encoding="utf-8")
     app_source = (root / "dashboard" / "src" / "App.rebuild.jsx").read_text(encoding="utf-8")
-    assert "location ^~ /demo" in nginx and "auth_basic off" in nginx
+    for location in ("location = /demo", "location ^~ /demo/"):
+        block = nginx.split(location, 1)[1].split("}", 1)[0]
+        assert "auth_basic off" in block
+        assert "try_files /index.html =404;" in block
+        assert "$uri" not in block
     assert "if (isDemo)" in app_source
     assert "Public demo · private integrations isolated" in app_source
