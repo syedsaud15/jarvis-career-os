@@ -12,12 +12,13 @@ from datetime import datetime, timedelta, timezone
 from urllib.parse import urlencode
 from urllib.request import Request as UrlRequest, urlopen
 from fastapi import FastAPI, File, HTTPException, Request, UploadFile
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse, StreamingResponse
 from cryptography.fernet import Fernet
 from pypdf import PdfReader
 from app.approvals import ApprovalService
 from app.config import get_settings
-from app.job_ranking import extract_skills, rank_job
+from app.job_ranking import extract_skills, normalized_job_key, rank_job
 from app.google_actions import GoogleActionExecutor
 from app.auth import create_token, hash_password, verify_password, verify_token
 from app.orchestrator import Orchestrator
@@ -43,6 +44,17 @@ async def lifespan(_: FastAPI):
 app = FastAPI(title="JARVIS Agent", version="0.1.0", lifespan=lifespan)
 
 
+@app.exception_handler(RequestValidationError)
+async def validation_error(_: Request, error: RequestValidationError):
+    fields = [".".join(str(part) for part in item["loc"][1:]) for item in error.errors()]
+    return JSONResponse(status_code=422, content={"detail": "Invalid request", "fields": fields})
+
+
+@app.exception_handler(Exception)
+async def safe_server_error(_: Request, __: Exception):
+    return JSONResponse(status_code=500, content={"detail": "JARVIS could not complete the request safely."})
+
+
 @app.middleware("http")
 async def optional_api_key(request: Request, call_next):
     public_paths = {"/health", "/metrics", "/docs", "/openapi.json", "/integrations/google/callback", "/auth/register", "/auth/login"}
@@ -52,6 +64,9 @@ async def optional_api_key(request: Request, call_next):
     if len(bucket) >= 120:
         return JSONResponse(status_code=429, content={"detail": "Rate limit exceeded. Try again shortly."})
     bucket.append(now)
+    content_length = request.headers.get("content-length")
+    if content_length and int(content_length) > 5 * 1024 * 1024:
+        return JSONResponse(status_code=413, content={"detail": "Request is larger than the 5 MB limit."})
     if settings.api_key and request.url.path not in public_paths:
         authorization = request.headers.get("Authorization", "")
         bearer = authorization.removeprefix("Bearer ").strip() if authorization.startswith("Bearer ") else ""
@@ -201,7 +216,13 @@ def list_cached_jobs(limit: int = 20, sender: str = "dashboard-user") -> list[di
     with store.connection() as con:
         profile = con.execute("SELECT skills_json FROM career_profiles WHERE sender=?", (sender,)).fetchone()
     skills = json.loads(profile["skills_json"]) if profile else None
-    return sorted((rank_job(dict(row), skills) for row in rows), key=lambda job: int(job["match_score"]), reverse=True)
+    ranked = sorted((rank_job(dict(row), skills) for row in rows), key=lambda job: (int(job["match_score"]), int(job["quality_score"])), reverse=True)
+    unique: dict[str, dict[str, object]] = {}
+    for job in ranked:
+        if job["is_expired"]:
+            continue
+        unique.setdefault(normalized_job_key(job), job)
+    return list(unique.values())[:safe_limit]
 
 
 def save_profile(sender: str, resume_text: str) -> dict[str, object]:
@@ -384,6 +405,44 @@ def interview_prep(application_id: int) -> dict[str, object]:
     return {"application_id": application_id, "matched_strengths": matched, "skill_gaps": missing, "questions": questions, "preparation_plan": ["Prepare two STAR stories with measurable outcomes", "Review the job description and map each requirement to evidence", "Prepare architecture and debugging examples", "Write three thoughtful questions for the interviewer"]}
 
 
+@app.get("/applications/{application_id}/copilot")
+def application_copilot(application_id: int) -> dict[str, object]:
+    application = get_application_or_404(application_id)
+    prep = interview_prep(application_id)
+    strengths = prep["matched_strengths"]
+    gaps = prep["skill_gaps"]
+    evidence = ", ".join(strengths[:4]) or "reliable data delivery and ownership"
+    return {
+        "resume_suggestions": [
+            f"Lead with measurable {application['title']} outcomes and evidence in {evidence}.",
+            "Mirror the role's language only where your resume contains truthful project evidence.",
+            f"Add one quantified bullet addressing {gaps[0] if gaps else 'production reliability'}.",
+        ],
+        "recruiter_email": (
+            f"Subject: Interest in {application['title']} at {application['company']}\n\n"
+            f"Hello, I am exploring the {application['title']} opportunity at {application['company']}. "
+            f"My background includes {evidence}. I would value a brief conversation about the team's priorities and how I could contribute."
+        ),
+        "cover_letter": draft_cover_letter(application_id)["draft"],
+        "interview_prep": prep,
+    }
+
+
+@app.get("/profile/skill-roadmap")
+def skill_roadmap(sender: str = "dashboard-user") -> dict[str, object]:
+    with store.connection() as con:
+        profile = con.execute("SELECT skills_json FROM career_profiles WHERE sender=?", (sender,)).fetchone()
+        jobs = con.execute("SELECT title, description FROM job_listings ORDER BY id DESC LIMIT 100").fetchall()
+    owned = set(json.loads(profile["skills_json"])) if profile else set()
+    demand: dict[str, int] = defaultdict(int)
+    for row in jobs:
+        for skill in extract_skills(f"{row['title']} {row['description'] or ''}"):
+            if skill not in owned:
+                demand[skill] += 1
+    ranked = sorted(demand.items(), key=lambda item: (-item[1], item[0]))[:6]
+    return {"current_skills": sorted(owned), "roadmap": [{"skill": skill, "demand_signals": count, "project": f"Build one production-style {skill} project with tests, observability and a measurable outcome."} for skill, count in ranked]}
+
+
 @app.get("/applications/export.csv")
 def export_applications(sender: str = "dashboard-user") -> StreamingResponse:
     rows = list_applications(sender)
@@ -418,12 +477,30 @@ def career_analytics(sender: str = "dashboard-user") -> dict[str, object]:
     by_status = {row["status"]: row["total"] for row in status_rows}
     interviews = by_status.get("INTERVIEW", 0)
     applied = by_status.get("APPLIED", 0) + interviews
+    funnel = [{"stage": stage, "total": by_status.get(stage, 0)} for stage in ("SAVED", "APPLIED", "INTERVIEW", "REJECTED")]
     return {
         "total_applications": total,
         "by_status": by_status,
         "interview_rate": round((interviews / applied) * 100) if applied else 0,
         "open_follow_ups": [dict(row) for row in follow_up_rows],
+        "funnel": funnel,
+        "conversion": {"saved_to_applied": round((applied / total) * 100) if total else 0, "applied_to_interview": round((interviews / applied) * 100) if applied else 0},
     }
+
+
+@app.get("/backup/export.json")
+def export_backup(sender: str = "dashboard-user") -> StreamingResponse:
+    with store.connection() as con:
+        data = {
+            "version": 1,
+            "exported_at": datetime.now(timezone.utc).isoformat(),
+            "profile": [dict(row) for row in con.execute("SELECT sender, resume_text, skills_json, updated_at FROM career_profiles WHERE sender=?", (sender,)).fetchall()],
+            "applications": list_applications(sender),
+            "settings": [dict(row) for row in con.execute("SELECT * FROM user_settings WHERE sender=?", (sender,)).fetchall()],
+            "resume_versions": [dict(row) for row in con.execute("SELECT label, resume_text, skills_json, created_at FROM resume_versions WHERE sender=?", (sender,)).fetchall()],
+        }
+    filename = f"jarvis-backup-{datetime.now(timezone.utc).date().isoformat()}.json"
+    return StreamingResponse(iter([json.dumps(data, default=str, indent=2)]), media_type="application/json", headers={"Content-Disposition": f'attachment; filename="{filename}"'})
 
 
 @app.get("/alerts")
