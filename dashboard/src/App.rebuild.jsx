@@ -15,6 +15,12 @@ function PageHeader({ kicker, title, copy, action }) {
   return <header className="page-heading"><div><span>{kicker}</span><h1>{title}</h1><p>{copy}</p></div>{action}</header>
 }
 
+function formatTimestamp(value) {
+  if (!value) return '—'
+  const parsed = new Date(value)
+  return Number.isNaN(parsed.getTime()) ? '—' : parsed.toLocaleString()
+}
+
 async function apiRequest(url, options = {}, timeout = 20000) {
   const controller = new AbortController()
   const timer = window.setTimeout(() => controller.abort(), timeout)
@@ -176,7 +182,7 @@ function App() {
           <form className="composer settings-form" onSubmit={saveSettings}><span>CAREER PREFERENCES</span><h2>Calibrate JARVIS</h2><input value={settings.display_name} onChange={(e) => setSettings({...settings, display_name:e.target.value})} placeholder="Display name" required/><input value={settings.target_role} onChange={(e) => setSettings({...settings, target_role:e.target.value})} placeholder="Target role" required/><input value={settings.target_location} onChange={(e) => setSettings({...settings, target_location:e.target.value})} placeholder="Target location" required/><label>Minimum profile fit<input type="number" min="0" max="100" value={settings.minimum_fit} onChange={(e) => setSettings({...settings, minimum_fit:Number(e.target.value)})}/></label><label className="check"><input type="checkbox" checked={settings.weekly_digest} onChange={(e) => setSettings({...settings, weekly_digest:e.target.checked})}/> Weekly intelligence digest</label><label className="check"><input type="checkbox" checked={settings.follow_up_reminders} onChange={(e) => setSettings({...settings, follow_up_reminders:e.target.checked})}/> Follow-up reminders</label><button>Save preferences ↗</button></form>
           <section className="panel weekly-panel"><header><div><span>WEEKLY COMMAND BRIEF</span><h2>Momentum at a glance</h2></div></header>{weekly && <div className="weekly-stats"><article><strong>{weekly.new_applications}</strong><small>NEW APPLICATIONS</small></article><article><strong>{weekly.interviews_moved}</strong><small>INTERVIEWS</small></article><article><strong>{weekly.interview_rate}%</strong><small>INTERVIEW RATE</small></article><p>{weekly.recommended_focus}</p></div>}<div className="notification-list">{notifications.map((item) => <article key={item.id}><b>{item.title}</b><small>{item.detail}</small></article>)}{!notifications.length && <p>All clear. No reminders need attention.</p>}</div></section>
         </div>
-        <section className="approval-queue activity-log"><header><div><span>AUDIT & ACTIVITY</span><h2>Everything JARVIS has touched</h2></div><b>{activity.length} events</b></header>{activity.slice(0,20).map((item, index) => <article key={`${item.created_at}-${index}`}><div><i>◎</i><span><strong>{item.type.replaceAll('.', ' ')}</strong><small>{item.details}</small></span></div><time>{new Date(`${item.created_at}Z`).toLocaleString()}</time></article>)}{!activity.length && <div className="queue-empty">Activity will appear as you use JARVIS.</div>}</section>
+        <section className="approval-queue activity-log"><header><div><span>AUDIT & ACTIVITY</span><h2>Everything JARVIS has touched</h2></div><b>{activity.length} events</b></header>{activity.slice(0,20).map((item, index) => <article key={`${item.created_at}-${index}`}><div><i>◎</i><span><strong>{item.type.replaceAll('.', ' ')}</strong><small>{item.details}</small></span></div><time>{formatTimestamp(item.created_at)}</time></article>)}{!activity.length && <div className="queue-empty">Activity will appear as you use JARVIS.</div>}</section>
       </section>}
     </main>
   </div>

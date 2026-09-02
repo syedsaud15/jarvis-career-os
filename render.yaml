@@ -11,6 +11,10 @@ services:
         sync: false
       - key: JARVIS_API_KEY
         generateValue: true
+      - key: JARVIS_ADMIN_USER
+        sync: false
+      - key: JARVIS_ADMIN_PASSWORD
+        sync: false
       - key: JARVIS_TIMEZONE
         value: Asia/Kolkata
       - key: ADZUNA_COUNTRY
