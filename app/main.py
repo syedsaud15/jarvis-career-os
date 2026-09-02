@@ -28,7 +28,7 @@ from app.types import (
 )
 
 settings = get_settings()
-store = Store(settings.database_path)
+store = Store(settings.database_path, settings.database_url)
 orchestrator = Orchestrator(store, settings)
 approvals = ApprovalService(store)
 request_window: dict[str, deque[float]] = defaultdict(deque)

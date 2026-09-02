@@ -9,6 +9,7 @@ from dotenv import load_dotenv
 @dataclass(frozen=True)
 class Settings:
     database_path: Path
+    database_url: str | None
     timezone: str
     bridge_url: str
     groq_api_key: str | None
@@ -26,6 +27,7 @@ def get_settings() -> Settings:
     load_dotenv()
     return Settings(
         database_path=Path(os.getenv("JARVIS_DB_PATH", "data/jarvis.db")),
+        database_url=os.getenv("DATABASE_URL") or None,
         timezone=os.getenv("JARVIS_TIMEZONE", "Asia/Kolkata"),
         bridge_url=os.getenv("BRIDGE_URL", "http://localhost:3000"),
         groq_api_key=os.getenv("GROQ_API_KEY") or None,

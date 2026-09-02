@@ -6,6 +6,7 @@ apscheduler>=3.10,<4
 pytest>=8,<9
 pypdf>=5,<7
 python-multipart>=0.0.9,<1
+psycopg[binary]>=3.2,<4
 # Optional integrations
 langchain-groq>=0.2,<1
 langchain-ollama>=0.2,<1
