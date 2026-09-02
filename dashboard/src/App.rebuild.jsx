@@ -126,6 +126,9 @@ function App() {
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [])
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' })
+  }, [page])
 
   async function scan(eventObject) {
     eventObject.preventDefault(); if (!query.trim() || busy) return
