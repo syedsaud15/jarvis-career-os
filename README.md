@@ -1,12 +1,41 @@
-# JARVIS Career OS
+<p align="center">
+  <img src="docs/assets/career-os-banner.gif" alt="JARVIS Career OS — Career intelligence. Human-approved actions. Built by Syed Saud." width="1200" />
+</p>
 
-### Career intelligence. Explainable decisions. Human-approved actions.
+<h1 align="center">JARVIS Career OS</h1>
+
+<p align="center"><strong>Career intelligence. Explainable decisions. Human-approved actions.</strong></p>
+
+<p align="center">
+  <a href="https://jarvis-career-os.onrender.com/demo">Explore live demo ↗</a> &nbsp; · &nbsp;
+  <a href="#architecture">Architecture</a> &nbsp; · &nbsp;
+  <a href="#local-development">Quick start</a> &nbsp; · &nbsp;
+  <a href="#quality-and-verification">Engineering quality</a>
+</p>
+
+<p align="center">
+  <img src="docs/assets/tech-react.svg" alt="React" />
+  <img src="docs/assets/tech-vite.svg" alt="Vite" />
+  <img src="docs/assets/tech-fastapi.svg" alt="FastAPI" />
+  <img src="docs/assets/tech-python.svg" alt="Python" />
+  <img src="docs/assets/tech-postgresql.svg" alt="PostgreSQL" />
+  <img src="docs/assets/tech-sqlite.svg" alt="SQLite" />
+  <img src="docs/assets/tech-docker.svg" alt="Docker" />
+  <img src="docs/assets/tech-nginx.svg" alt="NGINX" />
+  <img src="docs/assets/tech-render.svg" alt="Render" />
+</p>
+
+<p align="center"><sub>Original repository-owned artwork · brief intro animation, then still · <a href="docs/assets/career-os-banner.png">Static banner</a></sub></p>
+
+---
 
 A full-stack career workspace connecting job discovery, resume evidence, application tracking and approval-gated Google actions. Built by **Syed Saud** as a deployed engineering portfolio and personal-use product.
 
 **[Explore the public demo](https://jarvis-career-os.onrender.com/demo)** · **[Creator profile](https://github.com/syedsaud15)** · **[CI runs](https://github.com/syedsaud15/jarvis-career-os/actions)**
 
-**Stack:** React · Vite · FastAPI · Python · SQLite / PostgreSQL · Docker · NGINX · Render
+| Explainable intelligence | Controlled execution | Measurable progress |
+| :--- | :--- | :--- |
+| Resume evidence and transparent fit signals | Explicit approval before Google actions | Pipeline history, next actions and recovery |
 
 > The public demo uses synthetic data. It does not send email, create calendar events or access private career APIs. The owner's workspace is separately protected. This project does not claim enterprise certification or multi-tenant SaaS readiness.
 
@@ -19,6 +48,8 @@ Job searching often becomes a collection of disconnected browser tabs, resume dr
 The goal is not indiscriminate auto-application. It is to make the next useful action clear while keeping real-world communication under the user's control.
 
 ## Product experience
+
+**One workspace. From discovery to the next decision.**
 
 | Workspace | Capabilities |
 | --- | --- |
