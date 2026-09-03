@@ -16,6 +16,8 @@ test('public demo: navigation, filters, copilot, downloads, keyboard and API iso
   page.on('request', request => { if (new URL(request.url()).pathname.startsWith('/api/')) apiCalls.push(request.url()) })
   page.on('pageerror', error => errors.push(error.message))
   await page.goto('/demo')
+  await expect(page.getByRole('note')).toContainText('100% synthetic sample data')
+  await expect(page.getByText('Syed Saud', { exact: true })).toHaveCount(0)
   await expect(page.getByRole('heading', { level: 1 })).toContainText('Explorer')
   await expect(page.getByRole('heading', { name: 'Your weekly momentum' })).toBeVisible()
   await expect(page.getByRole('heading', { name: 'Your next actions' })).toBeVisible()

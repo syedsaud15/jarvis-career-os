@@ -52,7 +52,7 @@ function App() {
   const [page, setPage] = useState('overview')
   const [jobFilter, setJobFilter] = useState('all')
   const [query, setQuery] = useState('find senior data engineer jobs in Pune')
-  const [jobs, setJobs] = useState([])
+  const [jobs, setJobs] = useState(() => isDemo ? demoData.jobs : [])
   const [applications, setApplications] = useState([])
   const [profile, setProfile] = useState({ resume_connected: false, skills: [] })
   const [analytics, setAnalytics] = useState({ interview_rate: 0, open_follow_ups: [] })
@@ -61,7 +61,7 @@ function App() {
   const [approvals, setApprovals] = useState([])
   const [notifications, setNotifications] = useState([])
   const [activity, setActivity] = useState([])
-  const [settings, setSettings] = useState({ display_name: 'Syed Saud', target_role: 'Data Engineer', target_location: 'Pune', minimum_fit: 45, weekly_digest: true, follow_up_reminders: true })
+  const [settings, setSettings] = useState(() => isDemo ? demoData.settings : { display_name: '', target_role: '', target_location: '', minimum_fit: 45, weekly_digest: true, follow_up_reminders: true })
   const [weekly, setWeekly] = useState(null)
   const [email, setEmail] = useState({ to: '', subject: '', body: '' })
   const [event, setEvent] = useState({ title: '', starts_at: '', ends_at: '' })
@@ -190,7 +190,8 @@ function App() {
         <span className="hud-code code-b">PROFILE VECTOR // ACTIVE</span>
         <span className="hud-code code-c">SIGNAL BUS 01 · SECURE</span>
       </div>
-      <div className="topbar"><div className={`status-pill ${apiOnline ? '' : 'offline'}`} role="status" aria-live="polite"><i />{isDemo ? 'Public demo · private integrations isolated' : notice}{lastSynced && <small> · {lastSynced.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</small>}</div><div className="top-actions">{isDemo && <span className="demo-badge">READ ONLY</span>}{notifications.length > 0 && <button type="button" onClick={() => setPage('insights')}>Alerts {notifications.length}</button>}<button type="button" disabled={syncing} onClick={() => void loadData(true).catch(() => {})}>{syncing ? 'Syncing…' : 'Sync data'}</button><button type="button" className="command-key" aria-label="Focus intelligence scan" onClick={() => { setPage('overview'); window.setTimeout(() => scanInputRef.current?.focus(), 0) }}>⌘ K</button></div></div>
+      {isDemo && <div className="public-demo-banner" role="note"><strong>PUBLIC DEMO</strong><span>100% synthetic sample data · no private resume, notes, applications or Google account</span></div>}
+      <div className="topbar"><div className={`status-pill ${apiOnline ? '' : 'offline'}`} role="status" aria-live="polite"><i />{isDemo ? 'Simulation online · private APIs isolated' : notice}{lastSynced && <small> · {lastSynced.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</small>}</div><div className="top-actions">{isDemo && <span className="demo-badge">SYNTHETIC · READ ONLY</span>}{notifications.length > 0 && <button type="button" onClick={() => setPage('insights')}>Alerts {notifications.length}</button>}<button type="button" disabled={syncing} onClick={() => void loadData(true).catch(() => {})}>{syncing ? 'Syncing…' : 'Sync data'}</button><button type="button" className="command-key" aria-label="Focus intelligence scan" onClick={() => { setPage('overview'); window.setTimeout(() => scanInputRef.current?.focus(), 0) }}>⌘ K</button></div></div>
 
       {page === 'overview' && <section className="page overview-page">
         <PageHeader kicker={isDemo ? 'PUBLIC PRODUCT EXPERIENCE' : 'CAREER COMMAND CENTER'} title={<>{greeting}, {isDemo ? 'Explorer' : 'Syed'}.<br/><em>Your next move is getting clearer.</em></>} copy={isDemo ? 'Explore a safe, fully populated product simulation. No private data or real integrations are used.' : 'A live operating picture of your market, profile and active opportunities.'} action={<ReactorMark />} />
