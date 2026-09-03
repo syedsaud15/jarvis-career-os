@@ -13,5 +13,10 @@ outputs/
 dashboard/node_modules/
 dashboard/dist/
 .vite-cache/
+.qa/
+dashboard/.npm-cache/
+dashboard/.browsers/
+dashboard/test-results/
+dashboard/playwright-report/
 whatsapp-bridge/.wwebjs_auth/
 whatsapp-bridge/node_modules/

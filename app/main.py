@@ -23,6 +23,8 @@ from app.google_actions import GoogleActionExecutor
 from app.auth import create_token, hash_password, verify_password, verify_token
 from app.orchestrator import Orchestrator
 from app.store import Store
+from app.backup import build_backup
+from app.trends import weekly_trends
 from app.types import (
     ApplicationCreate, ApplicationNoteCreate, ApplicationStatusUpdate, ApprovalDecision,
     FollowUpCreate, ProcessRequest, ProcessResponse, ProfileTextUpdate, ResumeVersionCreate, EmailApprovalRequest, CalendarApprovalRequest, UserLogin, UserRegister, UserSettingsUpdate,
@@ -311,12 +313,18 @@ def save_application(payload: ApplicationCreate) -> dict[str, object]:
 @app.post("/applications/{application_id}/status")
 def update_application_status(application_id: int, payload: ApplicationStatusUpdate) -> dict[str, object]:
     with store.connection() as con:
+        previous = con.execute("SELECT sender,status FROM applications WHERE id=?", (application_id,)).fetchone()
+        if not previous:
+            raise HTTPException(status_code=404, detail="Application not found")
         cursor = con.execute(
             "UPDATE applications SET status=?, updated_at=CURRENT_TIMESTAMP WHERE id=?", (payload.status, application_id)
         )
         if cursor.rowcount == 0:
             raise HTTPException(status_code=404, detail="Application not found")
         row = con.execute("SELECT id, status, job_listing_id, created_at, updated_at FROM applications WHERE id=?", (application_id,)).fetchone()
+        if previous["status"] != payload.status:
+            con.execute("INSERT INTO audit_logs(sender,event_type,entity_type,entity_id,details) VALUES(?,'application.status_changed','application',?,?)",
+                        (previous["sender"], application_id, json.dumps({"from": previous["status"], "to": payload.status})))
     return dict(row)
 
 
@@ -374,12 +382,13 @@ def draft_cover_letter(application_id: int) -> dict[str, str]:
     skills = json.loads(profile["skills_json"]) if profile else []
     company = application["company"] or "your team"
     role = application["title"]
-    skills_line = ", ".join(skills[:6]) or "data engineering, SQL, and Python"
+    skills_line = ", ".join(skills[:6]) or "[add skills supported by your resume]"
+    name = get_user_settings(application["sender"])["display_name"]
     body = (
         f"Dear Hiring Team,\n\nI am writing to express my interest in the {role} role at {company}. "
         f"My data-engineering background includes {skills_line}, and I enjoy building reliable data products that turn complex information into useful decisions.\n\n"
         f"I would welcome the opportunity to discuss how my technical experience and ownership mindset can contribute to {company}. "
-        "Thank you for your time and consideration.\n\nSincerely,\nSyed Saud"
+        f"Thank you for your time and consideration.\n\nSincerely,\n{name}"
     )
     return {"application_id": str(application_id), "draft": body}
 
@@ -416,7 +425,7 @@ def application_copilot(application_id: int) -> dict[str, object]:
         "resume_suggestions": [
             f"Lead with measurable {application['title']} outcomes and evidence in {evidence}.",
             "Mirror the role's language only where your resume contains truthful project evidence.",
-            f"Add one quantified bullet addressing {gaps[0] if gaps else 'production reliability'}.",
+            f"For {gaps[0] if gaps else 'production reliability'}, add evidence only if you have it; otherwise use the learning roadmap, not a claimed skill.",
         ],
         "recruiter_email": (
             f"Subject: Interest in {application['title']} at {application['company']}\n\n"
@@ -464,6 +473,11 @@ def weekly_report(sender: str = "dashboard-user") -> dict[str, object]:
     return {"period_days": 7, "new_applications": recent, "interviews_moved": interviews, "interview_rate": analytics["interview_rate"], "open_follow_ups": analytics["open_follow_ups"], "top_opportunities": alerts, "recommended_focus": alerts[0]["next_step"] if alerts else "Run a fresh market scan and capture the strongest role."}
 
 
+@app.get("/analytics/trends")
+def career_trends(sender: str = "dashboard-user") -> dict[str, object]:
+    return weekly_trends(store, sender)
+
+
 @app.get("/analytics")
 def career_analytics(sender: str = "dashboard-user") -> dict[str, object]:
     with store.connection() as con:
@@ -490,15 +504,7 @@ def career_analytics(sender: str = "dashboard-user") -> dict[str, object]:
 
 @app.get("/backup/export.json")
 def export_backup(sender: str = "dashboard-user") -> StreamingResponse:
-    with store.connection() as con:
-        data = {
-            "version": 1,
-            "exported_at": datetime.now(timezone.utc).isoformat(),
-            "profile": [dict(row) for row in con.execute("SELECT sender, resume_text, skills_json, updated_at FROM career_profiles WHERE sender=?", (sender,)).fetchall()],
-            "applications": list_applications(sender),
-            "settings": [dict(row) for row in con.execute("SELECT * FROM user_settings WHERE sender=?", (sender,)).fetchall()],
-            "resume_versions": [dict(row) for row in con.execute("SELECT label, resume_text, skills_json, created_at FROM resume_versions WHERE sender=?", (sender,)).fetchall()],
-        }
+    data = build_backup(store, sender)
     filename = f"jarvis-backup-{datetime.now(timezone.utc).date().isoformat()}.json"
     return StreamingResponse(iter([json.dumps(data, default=str, indent=2)]), media_type="application/json", headers={"Content-Disposition": f'attachment; filename="{filename}"'})
 

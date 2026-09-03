@@ -1,5 +1,6 @@
 const now = new Date()
 const isoDaysAgo = (days) => new Date(now.getTime() - days * 86400000).toISOString()
+const monday = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - (now.getUTCDay() + 6) % 7))
 
 export const demoJobs = [
   { id: 9001, title: 'Senior Data Engineer', company: 'Nimbus Analytics', location: 'Bengaluru, Karnataka', description: 'Build Python, SQL, Spark and Databricks pipelines on AWS.', salary_min: 1800000, salary_max: 2600000, posted_at: isoDaysAgo(2), redirect_url: '#demo-role', match_score: 86, quality_score: 92, matched_skills: ['python','sql','spark','databricks'], missing_skills: ['kafka'], mnc_priority: true, work_mode: 'HYBRID', experience_level: 'SENIOR', age_days: 2, is_expired: false, match_explanation: 'Strong skill alignment, fresh listing and high-quality employer signal.', next_step: 'Lead with your production pipeline reliability metrics.' },
@@ -18,9 +19,11 @@ export const demoApplications = [
 
 export const demoData = {
   jobs: demoJobs,
+  roadmap: { roadmap: [{ skill: 'kafka', demand_signals: 2, project: 'Build a local event pipeline with retries, consumer lag monitoring and integration tests.' }, { skill: 'gcp', demand_signals: 1, project: 'Design and document a warehouse pipeline; validate the transformations locally without paid cloud resources.' }] },
+  trends: { weeks: Array.from({length: 8}, (_, i) => ({week_start: new Date(monday.getTime() - (7-i)*7*86400000).toISOString().slice(0,10), captured: i === 7 ? 3 : 0, applied: i === 7 ? 2 : 0, interviews: i === 7 ? 1 : 0, rejected: 0})) },
   applications: demoApplications,
   profile: { resume_connected: true, skills: ['python','sql','spark','pyspark','airflow','aws','azure','databricks','snowflake','dbt','docker','etl'] },
-  analytics: { interview_rate: 33, open_follow_ups: [{ id: 1, title: 'Data Platform Engineer', company: 'Atlas Financial', due_on: isoDaysAgo(-1).slice(0,10) }] },
+  analytics: { interview_rate: 50, open_follow_ups: [{ id: 1, title: 'Data Platform Engineer', company: 'Atlas Financial', due_on: isoDaysAgo(-1).slice(0,10) }] },
   integrations: [
     { name: 'Adzuna job data', status: 'DEMO', capability: 'Sample market intelligence' },
     { name: 'Gmail', status: 'SIMULATED', capability: 'No messages are sent in demo mode' },
@@ -35,5 +38,5 @@ export const demoData = {
     { type: 'profile.updated', entity_type: 'profile', details: '12 skills mapped from resume', created_at: isoDaysAgo(3) },
   ],
   settings: { display_name: 'Demo Candidate', target_role: 'Data Engineer', target_location: 'India', minimum_fit: 45, weekly_digest: true, follow_up_reminders: true },
-  weekly: { new_applications: 3, interviews_moved: 1, interview_rate: 33, recommended_focus: 'Prioritize high-quality roles posted in the last seven days.' },
+  weekly: { new_applications: 3, interviews_moved: 1, interview_rate: 50, recommended_focus: 'Prioritize high-quality roles posted in the last seven days.' },
 }
