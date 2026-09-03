@@ -49,4 +49,10 @@ def test_public_demo_contract_is_api_isolated():
         assert "try_files /index.html =404;" in block
         assert "$uri" not in block
     assert "if (isDemo)" in app_source
-    assert "Public demo · private integrations isolated" in app_source
+    assert "100% synthetic sample data" in app_source
+    assert "Simulation online · private APIs isolated" in app_source
+    assert "useState(() => isDemo ? demoData.settings" in app_source
+    demo_load = app_source.split("const loadData = useCallback", 1)[1].split("setSyncing(true)", 1)[0]
+    assert "setSettings(demoData.settings)" in demo_load
+    assert "return" in demo_load
+    assert "fetch(" not in demo_load and "apiRequest(" not in demo_load

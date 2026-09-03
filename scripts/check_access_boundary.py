@@ -27,6 +27,8 @@ def check(base):
     for path, expected in [('/demo', 200), ('/demo/', 200), ('/', 401),
                            ('/index.html', 401), ('/api/profile', 401),
                            ('/api/integrations', 401), ('/api/approvals', 401),
+                           ('/api/settings', 401), ('/api/applications', 401),
+                           ('/api/activity', 401), ('/api/backup/export.json', 401),
                            ('/demonstration', 401)]:
         actual, headers = probe(base, path)
         assert actual == expected, f'{path}: expected {expected}, got {actual}'
