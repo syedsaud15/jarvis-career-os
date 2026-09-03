@@ -61,6 +61,7 @@ def test_http_career_workflow_and_restore(client, tmp_path):
     app_id = application['id']
     assert api.post(f'/applications/{app_id}/notes', json={'body': 'Prepare data-quality story'}).status_code == 201
     assert api.post(f'/applications/{app_id}/follow-ups', json={'due_on': '2030-01-01'}).status_code == 201
+    assert api.get('/analytics').json()['open_follow_ups'][0]['application_id'] == app_id
     assert api.post('/resume-versions/from-profile?label=First').status_code == 201
     result = api.get(f'/applications/{app_id}/copilot').json()
     assert 'Test Candidate' in result['cover_letter']

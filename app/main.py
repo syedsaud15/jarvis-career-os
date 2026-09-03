@@ -485,7 +485,7 @@ def career_analytics(sender: str = "dashboard-user") -> dict[str, object]:
     with store.connection() as con:
         status_rows = con.execute("SELECT status, COUNT(*) AS total FROM applications WHERE sender=? GROUP BY status", (sender,)).fetchall()
         follow_up_rows = con.execute(
-            "SELECT follow_ups.id, follow_ups.due_on, job_listings.title, job_listings.company FROM follow_ups "
+            "SELECT follow_ups.id, follow_ups.application_id, follow_ups.due_on, job_listings.title, job_listings.company FROM follow_ups "
             "JOIN applications ON applications.id=follow_ups.application_id JOIN job_listings ON job_listings.id=applications.job_listing_id "
             "WHERE applications.sender=? AND follow_ups.completed=0 ORDER BY follow_ups.due_on LIMIT 10", (sender,)
         ).fetchall()

@@ -3,6 +3,7 @@ import './App.rebuild.css'
 import { demoData } from './demoData'
 import CareerInsights from './CareerInsights'
 import CareerActivity from './CareerActivity'
+import NextActions from './NextActions'
 
 const stages = ['SAVED', 'APPLIED', 'INTERVIEW', 'REJECTED']
 const navItems = [
@@ -198,7 +199,7 @@ function App() {
         <div className="overview-grid">
           <section className="panel market-panel"><header><div><span>MARKET PULSE</span><h2>Skills creating leverage</h2></div><button onClick={() => setPage('opportunities')}>Explore roles ↗</button></header><div className="signal-chart">{signals.map(([skill, count], index) => <div key={skill}><span>0{index + 1}</span><b>{skill}</b><i><u style={{width:`${Math.min(100, 35 + count * 13)}%`}} /></i><em>{count} signals</em></div>)}{!signals.length && <p>No matching skill signals in these listings yet. Scan more roles and review their full descriptions; this does not mean your resume has no skills.</p>}</div></section>
           <section className="panel radar-panel"><header><span>HIGH-FIT RADAR</span><b>{alerts.length} SIGNALS</b></header>{alerts.slice(0, 3).map((alert) => <article key={`${alert.title}-${alert.company}`}><div className="score-ring">{alert.match_score}%</div><div><strong>{alert.title}</strong><small>{alert.company}</small></div></article>)}{!alerts.length && <div className="panel-empty">No uncaptured roles meet the 45% radar threshold. Try a broader scan.</div>}</section>
-          <CareerActivity trends={trends} isDemo={isDemo} onDetails={() => setPage('insights')} />
+          <div className="overview-action-row"><CareerActivity trends={trends} isDemo={isDemo} onDetails={() => setPage('insights')} /><NextActions applications={applications} approvals={approvals} followUps={analytics.open_follow_ups || []} isDemo={isDemo} onPage={setPage} onWorkspace={openWorkspace} /></div>
         </div>
         <section className="panel integration-panel"><div><span>CONNECTED WORKSPACE</span><h2>Your career stack, synchronized.</h2></div><div className="integration-row">{integrations.map((item) => <div key={item.name} className={item.status === 'CONNECTED' ? 'online' : ''}><i>{item.name.includes('Gmail') ? 'M' : item.name.includes('Calendar') ? '31' : 'A'}</i><span><b>{item.name}</b><small>{item.status === 'CONNECTED' ? 'Connected' : 'Ready to connect'}</small></span></div>)}{integrations.some((item) => item.status === 'OAUTH_REQUIRED') && <button onClick={connectGoogle}>Connect Google</button>}</div></section>
       </section>}

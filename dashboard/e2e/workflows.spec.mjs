@@ -18,6 +18,11 @@ test('public demo: navigation, filters, copilot, downloads, keyboard and API iso
   await page.goto('/demo')
   await expect(page.getByRole('heading', { level: 1 })).toContainText('Explorer')
   await expect(page.getByRole('heading', { name: 'Your weekly momentum' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Your next actions' })).toBeVisible()
+  await page.locator('.next-actions-body > button').first().click()
+  await expect(page.getByRole('region', { name: 'Application workspace', exact: true })).toBeVisible()
+  await page.getByRole('region', { name: 'Application workspace', exact: true }).press('Escape')
+  await navigate(page, 'Overview')
   await expect(page.locator('.career-activity svg circle')).toHaveCount(8)
   await page.getByRole('button', { name: 'View detailed activity trends' }).click()
   await expect(page.getByRole('heading', { name: 'Eight-week activity trends' })).toBeVisible()
@@ -66,7 +71,16 @@ test('public demo: navigation, filters, copilot, downloads, keyboard and API iso
 test('personal synthetic workspace: capture, copilot, notes, stage history and backup', async ({ page, request }) => {
   await request.post('/__test/reset')
   await page.goto('/')
-  await navigate(page, 'Opportunities')
+  await expect(page.locator('.next-actions')).toContainText('No pending actions')
+  const momentum = await page.locator('.career-activity').boundingBox()
+  const actions = await page.locator('.next-actions').boundingBox()
+  if (page.viewportSize().width > 800) {
+    expect(Math.abs(momentum.y - actions.y)).toBeLessThan(2)
+    expect(Math.abs(momentum.width - actions.width)).toBeLessThan(2)
+  } else {
+    expect(actions.y).toBeGreaterThan(momentum.y + momentum.height)
+  }
+  await page.locator('.next-actions').getByRole('button', { name: 'Explore opportunities' }).click()
   await page.getByRole('button', { name: 'Capture role', exact: true }).click()
   await expect(page.getByRole('button', { name: 'Captured ✓' })).toBeDisabled()
   await navigate(page, 'Pipeline')
