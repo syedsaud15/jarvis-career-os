@@ -1,98 +1,243 @@
 # JARVIS Career OS
 
-A production-deployed career intelligence and human-in-the-loop automation product. Explore the synthetic, read-only public experience at **`/demo`**; the owner's real workspace remains separately password protected.
+### Career intelligence. Explainable decisions. Human-approved actions.
 
-## Completion features
+A full-stack career workspace connecting job discovery, resume evidence, application tracking and approval-gated Google actions. Built by **Syed Saud** as a deployed engineering portfolio and personal-use product.
 
-- Explainable job ranking with resume skill matches and gaps
-- Application pipeline, notes, follow-up reminders and duplicate-safe capture
-- Tailored cover-letter drafts and role-specific interview preparation
-- Approval-gated Gmail and Google Calendar execution with audit history
-- Career preferences, notifications, activity timeline and weekly command brief
-- Resume versioning and CSV application export
-- India-wide remote/hybrid, experience, freshness, location and salary filters
-- Duplicate and expired-role detection with deterministic quality scoring
-- Resume suggestions, recruiter email copilot and skill-gap roadmap
-- Synthetic public demo with zero access to private APIs, Gmail or Calendar
-- PostgreSQL migration registry and secret-free JSON backup/export
-- Password login, signed bearer tokens, API-key compatibility and rate limiting
-- Health/metrics endpoints, Docker/NGINX Render deployment and automated CI
+**[Explore the public demo](https://jarvis-career-os.onrender.com/demo)** · **[Creator profile](https://github.com/syedsaud15)** · **[CI runs](https://github.com/syedsaud15/jarvis-career-os/actions)**
 
-## Portfolio links
+**Stack:** React · Vite · FastAPI · Python · SQLite / PostgreSQL · Docker · NGINX · Render
 
-- Public demo: `https://jarvis-career-os.onrender.com/demo`
-- Private workspace: `https://jarvis-career-os.onrender.com/`
-- Health: `https://jarvis-career-os.onrender.com/api/health`
+> The public demo uses synthetic data. It does not send email, create calendar events or access private career APIs. The owner's workspace is separately protected. This project does not claim enterprise certification or multi-tenant SaaS readiness.
 
-The public demo contains synthetic data and is read-only. It performs no private API requests. Gmail, Calendar, OAuth tokens and personal resume data exist only behind the private access boundary.
+## Why this project exists
+
+Job searching often becomes a collection of disconnected browser tabs, resume drafts, spreadsheets and reminders. JARVIS connects those activities into a traceable workflow:
+
+**Discover → compare evidence → capture → prepare → approve → track progress.**
+
+The goal is not indiscriminate auto-application. It is to make the next useful action clear while keeping real-world communication under the user's control.
+
+## Product experience
+
+| Workspace | Capabilities |
+| --- | --- |
+| **Overview** | Market skill signals, high-fit radar, eight-week momentum and contextual next actions |
+| **Opportunities** | Cached job discovery, fit explanations, quality scores, location/work-mode/experience/freshness/salary filters |
+| **Pipeline** | Saved, applied, interview and rejected stages; notes, follow-ups and CSV export |
+| **Application workspace** | Deterministic resume suggestions, cover-letter and recruiter-email drafts, interview preparation |
+| **Action center** | Gmail and Calendar requests reviewed through an approval queue before execution |
+| **Insights & settings** | Career preferences, skill-gap roadmap, weekly history, audit activity and private JSON backup |
+| **Public showcase** | Architecture, technology overview, privacy boundaries and project disclaimer |
+
+### Two experiences, separate data paths
+
+| Capability | Public `/demo` | Protected `/` |
+| --- | --- | --- |
+| Data | Synthetic roles, profile and history | Owner's stored career data |
+| Navigation and filters | Interactive | Interactive |
+| Application preparation | Sample previews | Drafts based on captured roles and profile evidence |
+| Uploads and persistent edits | Disabled | Available |
+| Gmail / Calendar | No real integrations | OAuth connection and explicit approval required |
+| Exports | Sample CSV | Personal CSV and career-data backup |
+
+The repository is currently private. Source and CI links require authorized GitHub access; the demo is publicly accessible. The public showcase links to the creator's profile rather than promising access to private code.
 
 ## Architecture
 
-```text
-WhatsApp Web (optional) → Node bridge → FastAPI orchestrator
-                                      ├─ Job agent
-                                      ├─ Email draft agent
-                                      ├─ Calendar agent
-                                      ├─ Expense agent → SQLite
-                                      └─ Reminder agent → SQLite
-                                             ↓
-                                      Storage → SQLite or Neon PostgreSQL
+```mermaid
+flowchart TD
+    Visitor[Public visitor] --> Demo[React demo / synthetic data]
+    Owner[Workspace owner] --> Edge[Render HTTPS / NGINX access gate]
+    Edge --> UI[React personal workspace]
+    UI --> Proxy[NGINX /api proxy]
+    Proxy --> API[FastAPI services]
+    API --> Career[Ranking / copilot / pipeline / trends]
+    Career --> DB[(SQLite locally / PostgreSQL on Render)]
+    API --> Jobs[Adzuna job discovery]
+    API --> Queue[Approval queue and audit trail]
+    Queue --> Decision{Owner approves?}
+    Decision -->|Yes| Google[Gmail / Google Calendar via OAuth]
+    Decision -->|No| Stop[No external execution]
 ```
 
-## Quick start
+Demo state comes from frontend fixtures rather than private API requests. Production NGINX exposes `/demo` while protecting the personal workspace and private API routes. A minimal health route is public for deployment checks.
 
-1. Create a virtual environment and install dependencies: `pip install -r requirements.txt`.
-2. Copy `.env.example` to `.env` and set only the integrations you need.
-3. Start the API: `uvicorn app.main:app --reload --port 8000`.
-4. Open `http://localhost:8000/docs` and call `POST /process`, or run `pytest`.
-5. For WhatsApp, run `npm install && npm start` inside `whatsapp-bridge`, then scan the QR code from WhatsApp Linked Devices.
+### Engineering decisions
 
-## Sample messages
+- **Deterministic assistance:** core ranking, drafts and preparation work without a paid LLM key; behavior is inspectable and regression-testable.
+- **API-backed discovery:** job data comes from Adzuna rather than brittle browser scraping.
+- **Shared ranking:** opportunities and radar use the same cached, deduplicated, ranked and age-filtered role selection.
+- **Portable storage:** SQLite supports local development; PostgreSQL supports hosted persistence. Schema initialization and migrations live in the storage layer.
+- **Approval before execution:** requesting an action is separate from executing it; decisions and outcomes are auditable.
+- **Honest analytics:** saved roles, stage-change events and current-stage counts are distinct; unavailable history is never fabricated.
+- **Recoverable data:** versioned exports can be restored into a new local database without overwriting production.
 
-- `find data engineer jobs in Pune`
-- `draft an email to my recruiter`
-- `spent ₹250 on lunch`
-- `remind me to submit assignment`
-- `show my reminders`
+## Core workflow
 
-## Live job search setup
+1. **Add a resume.** Upload a text-based PDF or TXT file. The API extracts supported Data Engineering skills. With a hosted workspace, processing happens on the deployed server—not exclusively on the user's device.
+2. **Search for roles.** For example: `find data engineer jobs in Pune`. Broaden the search location when exploring other Indian cities or remote roles.
+3. **Review evidence.** Inspect matched skills, detected gaps and fit explanations. Filters operate on retrieved listings, not every job in India.
+4. **Capture and prepare.** Open the application workspace, review drafts, record private notes and set follow-up dates.
+5. **Track real progress.** Update stages when actual application/interview moves happen. Capturing a role does not submit an application.
+6. **Review external actions.** Approve Gmail or Calendar requests before execution. Next-action shortcuts only navigate; they do not send or modify data automatically.
+7. **Review and back up.** Use Insights for learning priorities, trends and a private career-data export.
 
-1. Create a local `.env` file from `.env.example`.
-2. Add your `ADZUNA_APP_ID` and `ADZUNA_APP_KEY`; never commit or share them.
-3. Restart the API and ask: `find data engineer jobs in Pune`.
+## Local development
 
-Results are fetched from Adzuna and cached in SQLite for auditability. Recent cached records are available at `GET /jobs`.
+Requires an authorized checkout. The CI baseline is **Python 3.11** and **Node.js 22**. Keep development servers on loopback; this setup is not the production authentication boundary.
 
-## Resume-aware ranking
+### Backend
 
-From the dashboard, use **Connect Resume** to upload a text-based PDF or TXT resume. JARVIS extracts supported Data Engineering skills locally, stores the profile in SQLite, and uses those skills to personalize the job-fit score. The raw resume never leaves the local API.
+From the repository root in PowerShell:
 
-See `DEPLOYMENT.md` for the deployment and security runbook. A secret-free personal backup is available from `GET /backup/export.json`, or locally with `python scripts/export_backup.py`.
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
+Copy-Item .env.example .env
+```
 
-## Career intelligence workspace
+Do not overwrite an existing `.env`. On macOS/Linux, use `source .venv/bin/activate` and `cp .env.example .env` instead.
 
-The dashboard also provides:
+For local SQLite, leave `DATABASE_URL` empty. Real discovery and Google actions require provider configuration; the synthetic demo does not.
 
-- Explainable role-fit scoring, matched skills, and visible skill gaps.
-- Saved application pipeline with recruiter/interview notes and follow-up dates.
-- A tailored cover-letter draft for each captured role.
-- Local resume-version snapshots and interview-conversion analytics.
-- An integration control surface showing job-data, Gmail, and Calendar readiness.
+```powershell
+python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+```
 
-Gmail and Calendar remain intentionally unavailable until Google OAuth is connected. Every external action continues through the Approval Queue first.
+### Frontend
 
-## Design decisions
+In a second terminal, from the repository root:
 
-- **Deterministic router first:** the system works without an LLM key and is easy to test. A Groq/Ollama classifier can be added behind `Orchestrator.route` without changing the API.
-- **Portable persistence:** SQLite supports local development; Neon PostgreSQL provides durable production storage.
-- **No brittle scraping by default:** add approved APIs or RSS feeds to the job agent instead of silently scraping job boards.
-- **Human approval for real-world effects:** email and outbound messaging remain draft/approval workflows.
-- **Audit trail:** approval creation and every approve/reject decision are stored locally and can be read from `GET /audit-logs`.
+```powershell
+cd dashboard
+npm ci
+npm run dev -- --host 127.0.0.1
+```
 
-## Tests
+Open the URL printed by Vite, or append `/demo` for synthetic data. Vite proxies `/api` to the backend and removes that prefix. Direct backend API documentation: `http://127.0.0.1:8000/docs`.
 
-Run `pytest`. CI also lints/builds the React dashboard and builds the production Docker image.
+### Configuration reference
 
-## Branding and disclaimer
+| Variable | Purpose |
+| --- | --- |
+| `JARVIS_DB_PATH` | Local SQLite file; default `data/jarvis.db` |
+| `DATABASE_URL` | PostgreSQL connection string; empty selects SQLite |
+| `ADZUNA_APP_ID`, `ADZUNA_APP_KEY`, `ADZUNA_COUNTRY` | Job provider configuration; country defaults to `in` |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI` | Gmail/Calendar OAuth application configuration |
+| `JARVIS_API_KEY` | Server-side API protection; production proxy injects the key |
+| `JARVIS_ADMIN_USER`, `JARVIS_ADMIN_PASSWORD` | Required Render container access gate |
+| `JARVIS_TIMEZONE` | Workspace timezone; weekly trend buckets explicitly use UTC |
 
-JARVIS Career OS uses an original vector intelligence-core mark and an engineering HUD visual language. It is an independent portfolio project with no affiliation with Marvel, Iron Man, employers, or job platforms. Job availability, salary and fit scores are informational and should be independently verified.
+Use `.env` locally and deployment environment settings in production. Never place secrets in React source, screenshots or commits. Render uses `JARVIS_ADMIN_PASSWORD`; the separate Caddy/VPS setup uses `JARVIS_ADMIN_PASSWORD_HASH`. These settings are not interchangeable.
+
+Optional LLM and bridge settings remain in [.env.example](.env.example); they are not required for the core career copilot. No paid LLM dependency is required, but third-party quotas, hosting limits and provider terms still apply.
+
+## Deployment and access boundary
+
+The Render path is defined in [render.yaml](render.yaml), [Dockerfile](Dockerfile), [NGINX configuration](deploy/render-nginx.conf) and [startup script](deploy/render-start.sh).
+
+1. Configure required service environment values, including admin credentials, API key and durable PostgreSQL storage.
+2. Add provider credentials only for enabled integrations. Match the deployed Google callback URI in both Google configuration and service settings.
+3. Deploy the intended revision and check `/api/health`.
+4. Check `/demo` without credentials and ensure `/` and private API routes reject unauthenticated access.
+5. Confirm both CI and Render refer to the intended revision. The blueprint deploys on commits; deployment success alone does not prove CI passed.
+
+Do not rely on a container's ephemeral filesystem for durable hosted data. See [DEPLOYMENT.md](DEPLOYMENT.md) for deployment notes and the separate Caddy/VPS path, and [PRODUCTION_CHECKLIST.md](PRODUCTION_CHECKLIST.md) for operational considerations.
+
+## Quality and verification
+
+| CI job | Coverage |
+| --- | --- |
+| `backend` | Unit/HTTP workflows, dedicated PostgreSQL service and export/restore verification |
+| `dashboard` | ESLint and production frontend build |
+| `browser-workflows` | Chromium desktop/mobile workflows, navigation, filters, copilot, keyboard, exports, action shortcuts and demo API isolation |
+| `production-container` | Docker build and actual NGINX public/private authentication-boundary checks |
+
+Backend checks, from the repository root:
+
+```powershell
+python -m pytest -q
+```
+
+Frontend checks:
+
+```powershell
+cd dashboard
+npm run lint
+npm run build
+npx playwright install chromium
+npm run test:e2e
+```
+
+Browser tests launch an isolated loopback server with synthetic data, not production Google actions. PostgreSQL recovery tests require a dedicated `JARVIS_TEST_DATABASE_URL`; never point it at production.
+
+For restricted Windows environments, `python -m scripts.verify_local` provides a workspace-local temporary-directory fallback. `npm run build -- --configLoader native` avoids the default Vite configuration-loader subprocess. If browser workers fail with `spawn EPERM`, rely on the CI browser result; a blocked run is not a passing test.
+
+Automated axe checks cover selected WCAG Level-A rules alongside keyboard and responsive checks. They do not establish full WCAG compliance or independent security certification. [FINAL_QA.md](FINAL_QA.md) records the procedure and earlier checkpoint evidence; the latest CI run is the reference for the current revision.
+
+## Backup and recovery
+
+Choose **Insights & settings → Download career backup** in the authenticated workspace.
+
+**Included:** captured jobs, resume/profile, preferences, notes, follow-ups, resume versions and recorded application stage history.
+
+**Excluded:** passwords, Google OAuth tokens, pending approvals, unrelated action history and uncaptured job cache.
+
+> Credential-excluding does not mean non-sensitive. The JSON contains personal resume and career data. Keep it outside the repository and public folders, with a separate private copy.
+
+Export from the repository root using the intended configured database:
+
+```powershell
+python -m scripts.export_backup --output career-backup.json
+```
+
+Restore into a **new local SQLite file**:
+
+```powershell
+python -m scripts.restore_backup career-backup.json --destination restored-career.db
+```
+
+Restore refuses an existing destination and rejects version-1 exports. It is not a production PostgreSQL overwrite tool or a full infrastructure backup. Google connections must be re-established separately. Preserve the original backup while validating recovery.
+
+## Repository map
+
+```text
+app/
+  main.py             API routes and career workflows
+  job_ranking.py      Skill extraction, fit, quality and age heuristics
+  approvals.py        Approval lifecycle
+  google_actions.py   Google action execution
+  store.py            Persistence and schema migrations
+  trends.py           UTC calendar-week history
+  backup.py           Versioned export and local restore
+  agents/             Optional command-routing capabilities
+dashboard/
+  src/                React workspace, demo fixtures and UI components
+  e2e/                Browser workflow and accessibility checks
+deploy/               Render proxy and startup configuration
+scripts/              Export, restore, QA and access-boundary tools
+tests/                Backend unit, integration and recovery tests
+.github/workflows/    Continuous integration
+```
+
+Optional WhatsApp bridge, expense and reminder command modules are separate from the main career experience. They are not required for the public demo or the hosted web workflow.
+
+## Boundaries and known limitations
+
+- **Fit is a heuristic, not a hiring probability.** Title, skills, employer signals, salary availability and freshness contribute. Quality scores measure metadata signals, not verified employer quality.
+- **Skill extraction is bounded.** Supported Data Engineering vocabulary and text matching can miss requirements. Scanned/image-only resumes are not an OCR workflow.
+- **Expiration is age-based.** Old listings are filtered heuristically; the system does not independently confirm whether an employer closed a role.
+- **Discovery is not exhaustive.** Results depend on provider responses and cache. Verify salary, work mode and availability against the original listing.
+- **Drafts need human review.** Generated wording is not evidence of a candidate's skills and does not mean an application was submitted.
+- **History begins with recorded events.** Earlier stage transitions cannot be reconstructed. Current-week data is partial; repeat transitions count separately. Interview rate is a current-stage ratio, not historical conversion.
+- **Operational maturity has limits.** Load testing, independent security review, comprehensive accessibility auditing, distributed rate limiting and verified multi-tenant isolation are not claimed by this personal-use release.
+
+## About
+
+Created by **[Syed Saud](https://github.com/syedsaud15)** to demonstrate full-stack product development, explainable career assistance, integration boundaries, relational persistence, recovery tooling and automated verification.
+
+JARVIS Career OS uses an original vector intelligence-core mark and a career-focused interface. It is independent and has no affiliation with Marvel, Iron Man, employers or job platforms. Independently verify all job availability, salary information and fit signals.
+
+No open-source license is currently declared in this repository. Public demo access does not itself grant permission to redistribute the source.
