@@ -111,3 +111,21 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
 .activity-body dl { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; border-top: 1px solid #cbd5db; padding-top: 18px; }
 .activity-body dt { font-size: 12px; }
 .activity-body dd { margin: 6px 0 0; font-size: 24px; color: #192f44; }
+/* Compact overview widget: fixed chart height prevents SVG expansion on wide screens. */
+.overview-grid .career-activity{width:100%;max-width:420px;align-self:start;border-radius:24px;background:linear-gradient(145deg,#fff,#f0f4f5);box-shadow:0 3px 0 #d1dadd,0 12px 26px #233a4c0c;overflow:hidden}
+.career-activity>header{padding:18px 20px 10px;border-bottom:0;gap:12px}
+.career-activity>header:after{display:none}
+.career-activity>header h2{font-size:19px;line-height:1.3;margin:6px 0 0}
+.career-activity>header button{display:grid;place-items:center;flex-shrink:0;width:36px;height:36px;min-height:36px;padding:0;border-radius:50%;background:white;color:#24435d;box-shadow:0 3px 12px #24384f12;font-size:20px}
+.career-activity .activity-body{padding:8px 20px 16px}
+.activity-summary{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.career-activity .activity-total{font-size:36px;line-height:1.15;letter-spacing:-1px}
+.activity-summary span{font-size:12px}
+.activity-summary .activity-badge{padding:5px 8px;border-radius:20px;background:#e8edef;color:#486070;font-size:10px;white-space:nowrap}
+.career-activity .activity-body svg{width:100%;height:84px;margin:8px 0 0}
+.career-activity .activity-caption{font-size:10px;line-height:1.5}
+.career-activity .activity-body dl{margin:12px 0 8px;padding-top:10px;gap:12px}
+.career-activity .activity-body dt{font-size:11px}
+.career-activity .activity-body dd{font-size:21px;margin-top:3px;line-height:1.2}
+.career-activity .activity-body>p{font-size:10px;line-height:1.5;margin:8px 0 0}
+@media(min-width:1101px){.side-rail .rail-card{padding:10px 12px;border-radius:14px;box-shadow:0 3px 0 #c9d3d6;flex-shrink:0}.side-rail .rail-card>span{font-size:7px;letter-spacing:.12em}.side-rail .rail-card strong{font-size:11px;margin-top:5px;line-height:1.3}.side-rail .rail-card small{font-size:8px;margin:2px 0 7px}.side-rail .rail-card button{min-height:28px;padding:5px 10px;font-size:10px;line-height:1.3;border-radius:9px}}

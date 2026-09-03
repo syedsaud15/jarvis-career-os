@@ -17,7 +17,7 @@ test('public demo: navigation, filters, copilot, downloads, keyboard and API iso
   page.on('pageerror', error => errors.push(error.message))
   await page.goto('/demo')
   await expect(page.getByRole('heading', { level: 1 })).toContainText('Explorer')
-  await expect(page.getByRole('heading', { name: 'Small steps. Visible progress.' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Your weekly momentum' })).toBeVisible()
   await expect(page.locator('.career-activity svg circle')).toHaveCount(8)
   await page.getByRole('button', { name: 'View detailed activity trends' }).click()
   await expect(page.getByRole('heading', { name: 'Eight-week activity trends' })).toBeVisible()
