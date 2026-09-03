@@ -102,3 +102,12 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
 @media(max-width:1100px){.side-rail nav button{min-height:44px}.rail-card{display:block;padding:5px}.rail-card>span,.rail-card strong,.rail-card small{display:none}.rail-card button{font-size:10px}}
 @media(max-width:700px){.side-rail{height:auto;min-height:70px;bottom:6px}.side-rail nav{grid-template-columns:repeat(5,minmax(0,1fr));gap:2px}.demo-mode .side-rail nav{grid-template-columns:repeat(7,minmax(0,1fr))}.side-rail nav button{padding:8px 1px;min-width:0;min-height:48px}.side-rail .rail-card{display:none}.page-heading{gap:14px;flex-wrap:wrap}.page-heading h1{font-size:clamp(30px,8vw,42px);overflow-wrap:anywhere}.product-area,.page,.panel,.insight-grid>*{min-width:0}.topbar{height:auto;min-height:80px;gap:12px;flex-wrap:wrap;padding:12px 16px}.status-pill{line-height:1.6}.top-actions{flex-wrap:wrap}.page button,.topbar button,.page a.primary{min-height:44px}.page input,.page select,.page textarea{min-width:0;font-size:16px}.page .scan-bar input{min-width:0;width:75%}.integration-row>div{min-width:0}.activity-log article{flex-wrap:wrap}.activity-log article small{max-width:220px}.advanced-filters{grid-template-columns:1fr}.page{padding-bottom:110px}.insight-content{padding:16px}.follow-form{grid-template-columns:1fr}.detail-drawer>header{gap:12px}.detail-drawer h2{font-size:22px;overflow-wrap:anywhere}.table-scroll{font-size:12px}}
 .pipeline-board>section>header{gap:8px}.pipeline-board>section>header b{margin-left:auto}.pipeline-board>section>header:after{margin-left:0}
+.career-activity { max-width: 660px; width: 100%; min-width: 0; background: linear-gradient(145deg, #fafbf9, #eef2f3); }
+.activity-body { padding: 24px; color: #365269; }
+.activity-total { font-size: 46px; color: #192f44; letter-spacing: -2px; }
+.activity-body p { font-size: 13px; line-height: 1.6; }
+.activity-body svg { display: block; width: 100%; height: auto; margin-top: 12px; }
+.activity-caption { display: flex; justify-content: space-between; gap: 12px; font-size: 12px; }
+.activity-body dl { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; border-top: 1px solid #cbd5db; padding-top: 18px; }
+.activity-body dt { font-size: 12px; }
+.activity-body dd { margin: 6px 0 0; font-size: 24px; color: #192f44; }

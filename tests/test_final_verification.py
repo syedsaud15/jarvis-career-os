@@ -26,6 +26,33 @@ def client(tmp_path, monkeypatch):
         yield api, store
 
 
+def test_radar_uses_current_deduplicated_scores(client):
+    api, store = client
+    api.post('/profile', json={'resume_text': 'Python SQL production pipelines'})
+    with store.connection() as con:
+        for source_id, posted in [('old', '2000-01-01'), ('fresh', datetime.now(timezone.utc).isoformat()), ('duplicate', datetime.now(timezone.utc).isoformat())]:
+            con.execute("INSERT INTO job_listings(source,source_id,query,title,company,description,posted_at) VALUES('test',?,'data','Data Engineer','Microsoft','python sql',?)", (source_id, posted))
+    jobs = api.get('/jobs?limit=100').json()
+    alerts = api.get('/alerts').json()
+    assert len(alerts) == 1
+    match = next(job for job in jobs if job['company'] == 'Microsoft')
+    assert alerts[0]['match_score'] == match['match_score']
+    assert not match['is_expired']
+
+
+def test_roadmap_empty_reasons(client):
+    api, store = client
+    assert api.get('/profile/skill-roadmap').json()['status'] == 'resume_required'
+    api.post('/profile', json={'resume_text': 'Python SQL Kafka production pipelines'})
+    assert api.get('/profile/skill-roadmap').json()['status'] == 'no_detected_gaps'
+    with store.connection() as con:
+        con.execute("UPDATE job_listings SET description='Build reliable platforms'")
+    assert api.get('/profile/skill-roadmap').json()['status'] == 'insufficient_job_skills'
+    with store.connection() as con:
+        con.execute("UPDATE job_listings SET posted_at='2000-01-01'")
+    assert api.get('/profile/skill-roadmap').json()['status'] == 'no_roles'
+
+
 def test_http_career_workflow_and_restore(client, tmp_path):
     api, store = client
     assert api.post('/profile', json={'resume_text': 'Python SQL pipelines with measured production results'}).status_code == 200

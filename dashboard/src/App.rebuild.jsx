@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import './App.rebuild.css'
 import { demoData } from './demoData'
 import CareerInsights from './CareerInsights'
+import CareerActivity from './CareerActivity'
 
 const stages = ['SAVED', 'APPLIED', 'INTERVIEW', 'REJECTED']
 const navItems = [
@@ -91,7 +92,7 @@ function App() {
   const signals = useMemo(() => Object.entries(jobs.flatMap((job) => job.matched_skills || []).reduce((all, skill) => ({ ...all, [skill]: (all[skill] || 0) + 1 }), {})).sort((a, b) => b[1] - a[1]).slice(0, 6), [jobs])
   const locations = useMemo(() => [...new Set(jobs.map((job) => (job.location || '').split(',')[0]).filter(Boolean))].sort(), [jobs])
   const visibleJobs = useMemo(() => jobs.filter((job) => {
-    if (jobFilter === 'high' && job.match_score < 50) return false
+    if (jobFilter === 'high' && job.match_score < 45) return false
     if (jobFilter === 'mnc' && !job.mnc_priority) return false
     if (filters.location !== 'ALL' && !(job.location || '').toLowerCase().includes(filters.location.toLowerCase())) return false
     if (filters.workMode !== 'ALL' && job.work_mode !== filters.workMode) return false
@@ -109,7 +110,7 @@ function App() {
     setSyncing(true)
     if (showStatus) setNotice('Synchronizing career intelligence…')
     try {
-      const urls = ['/api/jobs?limit=15', '/api/applications', '/api/profile', '/api/analytics', '/api/integrations', '/api/alerts', '/api/approvals', '/api/notifications', '/api/activity', '/api/settings', '/api/reports/weekly', '/api/profile/skill-roadmap', '/api/analytics/trends']
+      const urls = ['/api/jobs?limit=100', '/api/applications', '/api/profile', '/api/analytics', '/api/integrations', '/api/alerts', '/api/approvals', '/api/notifications', '/api/activity', '/api/settings', '/api/reports/weekly', '/api/profile/skill-roadmap', '/api/analytics/trends']
       const responses = await Promise.all(urls.map((url) => apiRequest(url, { cache: 'no-store' })))
       const data = await Promise.all(responses.map((response) => response.json()))
       setJobs(data[0]); setApplications(data[1]); setProfile(data[2]); setAnalytics(data[3]); setIntegrations(data[4]); setAlerts(data[5]); setApprovals(data[6]); setNotifications(data[7]); setActivity(data[8]); setSettings(data[9]); setWeekly(data[10]); setRoadmap(data[11]); setTrends(data[12])
@@ -195,8 +196,9 @@ function App() {
         <form className="scan-bar" onSubmit={scan}><span aria-hidden="true">⌕</span><label className="sr-only" htmlFor="career-scan">Career intelligence query</label><input id="career-scan" ref={scanInputRef} value={query} onChange={(e) => setQuery(e.target.value)} autoComplete="off" /><button disabled={busy}>{busy ? 'Scanning market…' : 'Run intelligence scan'} ↗</button></form>
         <div className="metric-grid"><article><span>Market signals</span><strong>{jobs.length}</strong><small>{profile.skills?.length || 0} profile skills mapped</small></article><article><span>Average fit</span><strong>{averageFit || '—'}{averageFit ? '%' : ''}</strong><small>Across live roles</small></article><article><span>Active pipeline</span><strong>{applications.length}</strong><small>{analytics.interview_rate}% interview rate</small></article><article><span>Pending actions</span><strong>{approvals.length}</strong><small>Approval protected</small></article></div>
         <div className="overview-grid">
-          <section className="panel market-panel"><header><div><span>MARKET PULSE</span><h2>Skills creating leverage</h2></div><button onClick={() => setPage('opportunities')}>Explore roles ↗</button></header><div className="signal-chart">{signals.map(([skill, count], index) => <div key={skill}><span>0{index + 1}</span><b>{skill}</b><i><u style={{width:`${Math.min(100, 35 + count * 13)}%`}} /></i><em>{count} signals</em></div>)}</div></section>
-          <section className="panel radar-panel"><header><span>HIGH-FIT RADAR</span><b>{alerts.length} LIVE</b></header>{alerts.slice(0, 3).map((alert) => <article key={`${alert.title}-${alert.company}`}><div className="score-ring">{alert.match_score}%</div><div><strong>{alert.title}</strong><small>{alert.company}</small></div></article>)}{!alerts.length && <div className="panel-empty">Run a scan to activate your radar.</div>}</section>
+          <section className="panel market-panel"><header><div><span>MARKET PULSE</span><h2>Skills creating leverage</h2></div><button onClick={() => setPage('opportunities')}>Explore roles ↗</button></header><div className="signal-chart">{signals.map(([skill, count], index) => <div key={skill}><span>0{index + 1}</span><b>{skill}</b><i><u style={{width:`${Math.min(100, 35 + count * 13)}%`}} /></i><em>{count} signals</em></div>)}{!signals.length && <p>No matching skill signals in these listings yet. Scan more roles and review their full descriptions; this does not mean your resume has no skills.</p>}</div></section>
+          <section className="panel radar-panel"><header><span>HIGH-FIT RADAR</span><b>{alerts.length} SIGNALS</b></header>{alerts.slice(0, 3).map((alert) => <article key={`${alert.title}-${alert.company}`}><div className="score-ring">{alert.match_score}%</div><div><strong>{alert.title}</strong><small>{alert.company}</small></div></article>)}{!alerts.length && <div className="panel-empty">No uncaptured roles meet the 45% radar threshold. Try a broader scan.</div>}</section>
+          <CareerActivity trends={trends} isDemo={isDemo} onDetails={() => setPage('insights')} />
         </div>
         <section className="panel integration-panel"><div><span>CONNECTED WORKSPACE</span><h2>Your career stack, synchronized.</h2></div><div className="integration-row">{integrations.map((item) => <div key={item.name} className={item.status === 'CONNECTED' ? 'online' : ''}><i>{item.name.includes('Gmail') ? 'M' : item.name.includes('Calendar') ? '31' : 'A'}</i><span><b>{item.name}</b><small>{item.status === 'CONNECTED' ? 'Connected' : 'Ready to connect'}</small></span></div>)}{integrations.some((item) => item.status === 'OAUTH_REQUIRED') && <button onClick={connectGoogle}>Connect Google</button>}</div></section>
       </section>}

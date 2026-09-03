@@ -213,7 +213,7 @@ def list_cached_jobs(limit: int = 20, sender: str = "dashboard-user") -> list[di
     with store.connection() as con:
         rows = con.execute(
             "SELECT id, source, query, title, company, location, description, salary_min, salary_max, redirect_url, posted_at, fetched_at "
-            "FROM job_listings ORDER BY id DESC LIMIT ?", (safe_limit,)
+            "FROM job_listings ORDER BY id DESC LIMIT ?", (100,)
         ).fetchall()
     with store.connection() as con:
         profile = con.execute("SELECT skills_json FROM career_profiles WHERE sender=?", (sender,)).fetchone()
@@ -441,7 +441,7 @@ def application_copilot(application_id: int) -> dict[str, object]:
 def skill_roadmap(sender: str = "dashboard-user") -> dict[str, object]:
     with store.connection() as con:
         profile = con.execute("SELECT skills_json FROM career_profiles WHERE sender=?", (sender,)).fetchone()
-        jobs = con.execute("SELECT title, description FROM job_listings ORDER BY id DESC LIMIT 100").fetchall()
+    jobs = list_cached_jobs(100, sender)
     owned = set(json.loads(profile["skills_json"])) if profile else set()
     demand: dict[str, int] = defaultdict(int)
     for row in jobs:
@@ -449,7 +449,9 @@ def skill_roadmap(sender: str = "dashboard-user") -> dict[str, object]:
             if skill not in owned:
                 demand[skill] += 1
     ranked = sorted(demand.items(), key=lambda item: (-item[1], item[0]))[:6]
-    return {"current_skills": sorted(owned), "roadmap": [{"skill": skill, "demand_signals": count, "project": f"Build one production-style {skill} project with tests, observability and a measurable outcome."} for skill, count in ranked]}
+    detected = any(extract_skills(f"{row['title']} {row['description'] or ''}") for row in jobs)
+    status = 'resume_required' if not profile else 'no_roles' if not jobs else 'insufficient_job_skills' if not detected else 'gaps_found' if ranked else 'no_detected_gaps'
+    return {"status": status, "current_skills": sorted(owned), "roadmap": [{"skill": skill, "demand_signals": count, "project": f"Build one production-style {skill} project with tests, observability and a measurable outcome."} for skill, count in ranked] if profile else []}
 
 
 @app.get("/applications/export.csv")
@@ -513,13 +515,8 @@ def export_backup(sender: str = "dashboard-user") -> StreamingResponse:
 def high_signal_alerts(sender: str = "dashboard-user", limit: int = 5) -> list[dict[str, object]]:
     safe_limit = max(1, min(limit, 20))
     with store.connection() as con:
-        job_rows = con.execute(
-            "SELECT id, title, company, location, description, salary_min, salary_max FROM job_listings ORDER BY id DESC LIMIT 100"
-        ).fetchall()
-        profile = con.execute("SELECT skills_json FROM career_profiles WHERE sender=?", (sender,)).fetchone()
         captured = {row["job_listing_id"] for row in con.execute("SELECT job_listing_id FROM applications WHERE sender=?", (sender,)).fetchall()}
-    skills = json.loads(profile["skills_json"]) if profile else None
-    ranked = [rank_job(dict(row), skills) for row in job_rows if row["id"] not in captured]
+    ranked = [job for job in list_cached_jobs(100, sender) if job['id'] not in captured]
     high_signal = [job for job in sorted(ranked, key=lambda job: int(job["match_score"]), reverse=True) if job["match_score"] >= 45]
     return [{"type": "HIGH_FIT_ROLE", "title": job["title"], "company": job["company"], "match_score": job["match_score"], "next_step": job["next_step"]} for job in high_signal[:safe_limit]]
 
